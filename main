@@ -1,0 +1,243 @@
+
+#include<stdio.h>
+#include<stdio.h>
+#include<string.h>
+
+#define EMPTY   ' '
+#define PLAYER  'X'
+#define CPU     'O'
+char board[9];
+
+int wins[8][3]={
+{0,1,2},{3,4,5},{6,7,8},
+{0,3,6},{1,4,7},{2,5,8},
+{0,4,8},{2,4,6}
+};
+
+
+void  init_board(){
+ for(int i=0;i<9;i++) board[i] = EMPTY; 
+}
+
+
+void print_board(){
+  printf("\n");
+  printf("  Position Guide:      Current Board:\n");
+  printf("  1 | 2 | 3 |            %c | %c | %c |\n",board[0],board[1],board[2]);
+  printf(" --------------          -------------\n");
+  printf("   4 | 5 | 6 |           %c | %c | %c |\n",board[3],board[4],board[5]);
+  printf(" --------------         -------------\n");
+  printf("  7 | 8 | 9 |            %c | %c | %c |\n",board[6],board[7],board[8]);
+  printf("\n");
+}
+
+int board_full(){
+  for(int i=0;i<9;i++)
+  if(board[i]== EMPTY)return 0;
+  return 1;
+}
+
+char check_winner(){
+  for(int i=0;i<8;i++){
+    int a=wins[i][0], b=wins[i][1],c=wins[i][2];
+    if(board[a]!=EMPTY && board[a]==board[b]&& board[a]==board[c]) return board[a];
+  }
+  return EMPTY;
+}
+
+//easy ai.
+int find_winning_move(char mark){
+  for(int i=0;i<8;i++){
+int a=wins[i][0], b=wins[i][1],c=wins[i][2];
+if(board[a]==mark && board[b]==mark && board[c]==EMPTY) return c;
+if(board[a]==mark && board[c]==mark && board[b]== EMPTY) return b;
+ if(board[b]==mark && board[c]==mark && board[a]==EMPTY) return a;
+  }
+ return -1; 
+
+}
+ int ai_easy(){
+ int move; 
+ move = find_winning_move(CPU);
+ if(move != -1) return move;
+move=find_winning_move(PLAYER);
+if(move!=-1)return move ;
+
+if(board[4]==EMPTY) return 4;
+
+int corners[]={0,6,2,8};
+for(int i=0;i<4;i++){
+  if(board[corners[i]]==EMPTY) return corners[i];
+}
+int edges[]={1,3,5,7};
+for(int i=0;i<4;i++){
+  if(board[edges[i]]== EMPTY)return edges[i];
+}
+return -1;
+ }
+
+//hard ai
+int minimax(int depth,int is_maximising){
+  char winner = check_winner();
+  if(winner == CPU) return 10 - depth;
+  if(winner == PLAYER) return -10 + depth;
+  if(board_full()) return 0;  
+
+
+  if(is_maximising){
+    int best = -1000;
+for(int i=0;i<9;i++){
+  if(board[i]!=EMPTY) continue;
+  board[i]=CPU;
+  int score = minimax(depth+1,0);
+  board[i]= EMPTY;
+  if(score>best) best =score;
+}
+return best;
+} 
+else 
+{
+int best = 1000;
+for(int i=0;i<9;i++){
+  if(board[i]!=EMPTY)continue;
+  board[i]=PLAYER;
+  int score=minimax(depth+1,1);
+  board[i]=EMPTY;
+  if(score<best) best=score;
+}
+return best;
+}
+
+}
+
+int ai_hard(){
+int best_score=-1000;
+int best_move=-1;
+
+for(int i=0;i<9;i++){
+
+if(board[i]!=EMPTY) continue;
+board[i]=CPU;
+int score= minimax(0,0);
+board[i]= EMPTY;
+if(score>best_score){
+  best_score= score;
+  best_move = i;
+}
+}
+return best_move;
+}
+
+int get_playermove(){
+  int pos;
+  while(1){
+    printf("  YOUR move -> (1-9): " );
+    
+    if(scanf("%d",&pos)!=1){
+      while(getchar()!= '\n');
+      printf(" INVALID :-[ ---- ENTER a number (1-9) ;-)\n");
+      continue;
+    }
+    pos--;
+    if(pos<0 || pos >8){
+      printf(" OUT OF RANGE - pick 1 t0 9.\n");
+      continue;
+    }
+    if(board[pos]!=EMPTY){
+      printf(" THAT SQUARE IS TAKEN -- PICK ANOTHER.\n");
+      continue;
+    }
+    return pos;
+  }
+}
+
+int get_mode(){
+int m;
+printf("\n Select mode:\n");
+printf("    1- two players\n");
+printf("     2- VS CPU \n");
+printf("     3-VS CPU(HARD/UNbeatable)\n");
+printf("  Choice: ");
+while(scanf("%d",&m)!=1|| m<1|| m>3){
+  while(getchar()!= '\n');
+  printf(" Enter 1,2 or 3 : ");
+}
+return m;
+}
+
+char get_player2(int mode){
+  if(mode==1) return 'O';
+  return CPU;
+}
+
+void play(int mode){
+init_board();
+char current =PLAYER;
+char winner;
+while(1){
+print_board();
+int move;
+if(current== PLAYER){
+  printf("--->> PLAYER X's turn\n");
+  move= get_playermove();
+}
+else if(mode==1){
+  printf(">> Player O's turn-:\n");
+  move=get_playermove();
+}
+else if(mode==2){
+  printf(" >> CPU thinting (easy)\n");
+move=ai_easy();
+printf(" CPU plays position %d\n",move+1);
+}
+else{
+  printf(" CPU thinking HARD...\n");
+  move=ai_hard();
+  printf(" CPU plays position %d\n", move+1);
+}
+board[move]=current;
+winner = check_winner();
+if(winner != EMPTY){
+  print_board();
+  if(winner== PLAYER){
+    printf("***! PLAYER X wins***!..\n");
+    return;
+  }
+  else if(mode==1){
+
+    printf(" Player O wins ...!\n");
+    return;
+  }
+  else{ 
+    printf(" CPU wins!....>\n\n");
+    return;
+  }
+}
+if(board_full()){
+  print_board();
+  printf("------ IT's a DRAW!---->\n\n");
+  return;
+}
+current = (current == PLAYER)? CPU : PLAYER;
+}
+}
+
+
+int main(){
+printf("\n====================================\n");
+printf("          TIC    TAC    TOE   (C)\n");
+printf("\n====================================\n");
+
+while(1){
+  int mode= get_mode();
+  play(mode);
+  printf( " PLAY AGAIN ? (y/n):-");
+  char again;
+  scanf("%c",&again);
+  if(again!='y' && again!='Y')break;
+}
+printf(" THANKS FOR PLAYING!!\n\n");
+
+
+  return 0;
+}
